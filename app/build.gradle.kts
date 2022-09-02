@@ -5,6 +5,8 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.13.RELEASE"
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
+
+	application
 }
 
 group = "noednett"
@@ -30,6 +32,17 @@ tasks.withType<KotlinCompile> {
 	}
 }
 
+//disabling '-plain.jar' version in build.
+tasks.getByName<Jar>("jar") {
+	enabled = false
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+application {
+	mainClass.set("noednett.OpenLife.OpenLifeApplicationKt")
+}
+
+
