@@ -28,15 +28,13 @@ services:
 #Nginx Service
   proxy:
     build:
-      context: ./nginx/proxy
+      context: ./nginx/
       dockerfile: Dockerfile
     container_name: proxy
     restart: always
     tty: true
     ports:
     - "80:80"
-    - "8081:8081"
-    - "8000:8000"
     depends_on:
     - app
     volumes: 
