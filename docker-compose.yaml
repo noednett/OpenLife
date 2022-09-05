@@ -10,7 +10,7 @@ services:
     container_name: app
     tty: true
     depends_on:
-      - db
+      - postgres 
     environment:
       SERVICE_NAME: app
       SERVICE_TAGS: dev
@@ -45,20 +45,34 @@ services:
       - app-network
 
 #PostgreSQL Service
-  db:
-    image: postgres:14.1-alpine
-    container_name: db
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: secret 
+      POSTGRES_DB: openlifedb
+      POSTGRES_USER: admin
+      PGDATA: /var/lib/postgresql/data
+    image: postgres:latest
+    container_name: postgres
     restart: always
+    ports:
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
       - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
-    environment:
-      POSTGRES_PASSWORD: test_db_pw
-      POSTGRES_USER: test_db_user
-      POSTGRES_DB: test_db
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
     ports:
-      - "54320:5432"
+      - "5555:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: secret 
+    restart: always
     networks:
       - app-network
 
@@ -69,5 +83,5 @@ networks:
 
 #Docker Volumes
 volumes:
-  db_data:
+  db-data:
     driver: local
