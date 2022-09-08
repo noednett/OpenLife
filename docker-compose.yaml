@@ -14,6 +14,11 @@ services:
     environment:
       SERVICE_NAME: app
       SERVICE_TAGS: dev
+      #credentials for database access.
+      #SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/openlifedb
+      #SPRING_DATASOURCE_USERNAME: admin
+      #SPRING_DATASOURCE_PASSWORD: secret
+      #SPRING_JPA_HIBERNATE_DDL_AUTO: update
       #it could be argued that our working directory should be in ./app
       working_dir: /usr/local/dev/OpenLife/
     expose:
@@ -63,16 +68,16 @@ services:
     networks:
       - app-network
 
-  pgadmin:
-    image: dpage/pgadmin4
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: always
     depends_on:
       - postgres
     ports:
       - "5555:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: secret 
-    restart: always
+    volumes:
+      - cloudbeaver:/opt/cloudbeaver/workspace 
     networks:
       - app-network
 
@@ -85,3 +90,4 @@ networks:
 volumes:
   db-data:
     driver: local
+  cloudbeaver:
