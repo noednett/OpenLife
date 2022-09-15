@@ -3,76 +3,72 @@ version: '3'
 
 #Spring Boot service
 services:
-  app:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: app
+      #target: dev
+    container_name: backend
     tty: true
     depends_on:
-      - postgres 
+      - database
     environment:
-      SERVICE_NAME: app
+      SERVICE_NAME: backend
       SERVICE_TAGS: dev
-      #it could be argued that our working directory should be in ./app
-      working_dir: /usr/local/dev/OpenLife/
     expose:
       - "8080"
     volumes:
-      - ./:/var/www
-          #They bind-mount their ./php/local.ini to /usr/local/etc/php/conf.d/local.ini here, similar we would probably also add the source here for the app.
-          #https://www.digitalocean.com/community/tutorials/how-to-set-up-laravel-nginx-and-mysql-with-docker-compose-on-ubuntu-20-04
+      - ./resources:/res
     networks:
       - app-network
 
 #Nginx Service
   proxy:
-    build:
-      context: ./nginx/
-      dockerfile: Dockerfile
+    image: nginx:alpine
     container_name: proxy
     restart: always
     tty: true
     ports:
     - "80:80"
     depends_on:
-    - app
+    - backend
     volumes: 
-      - ./:/var/www
+      - ./html:/var/www/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
     links:
-      - app
+      - backend
     networks:
       - app-network
 
 #PostgreSQL Service
-  postgres:
+  database:
     environment:
       POSTGRES_PASSWORD: secret 
       POSTGRES_DB: openlifedb
       POSTGRES_USER: admin
       PGDATA: /var/lib/postgresql/data
     image: postgres:latest
-    container_name: postgres
+    container_name: database
     restart: always
     ports:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     networks:
       - app-network
 
-  pgadmin:
-    image: dpage/pgadmin4
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: always
     depends_on:
-      - postgres
+      - database
     ports:
       - "5555:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: secret 
-    restart: always
+    volumes:
+      - cloudbeaver:/opt/cloudbeaver/workspace 
     networks:
       - app-network
 
@@ -85,3 +81,4 @@ networks:
 volumes:
   db-data:
     driver: local
+  cloudbeaver:

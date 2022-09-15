@@ -1,4 +1,6 @@
+#ignoring raw data things
 *.zip
+raw-data/
 
 HELP.md
 .gradle

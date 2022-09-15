@@ -1,29 +1,31 @@
-#Temporary container building the app with gradle.
-FROM gradle:7-jdk18-alpine AS BUILD
-ENV APP_HOME=/usr/local/dev/OpenLife/
+##
+## Build
+##
 
-WORKDIR $APP_HOME
+# Create build stage based on buster image
+FROM golang:1.16-buster AS build
+# Create working directory under /app
+WORKDIR /app
+# Copy over all go config (go.mod, go.sum etc.)
+COPY . ./
+# Install any required modules
+RUN go mod download
 
-COPY gradle ./gradle/
-COPY settings.gradle.kts gradlew ./
-COPY app ./app/
+#install required github packages
+RUN go get github.com/gin-gonic/gin
 
-RUN ./gradlew build 
+# Run the Go build and output binary. This also forces go to use all go implementations of net libraries. this is required, since alpine does not feature them. alternatively, if only net was used, we can use CGO_ENABLED=0 to achieve the same, where we just disable CGO.
+RUN go build -o /app-backend -tags netgo -a -v
 
-#Creating the openjdk container for the app
-FROM openjdk:18-alpine
-ENV APP_HOME=/usr/local/dev/OpenLife/
+##
+## Deploy
+##
 
-WORKDIR $APP_HOME
+FROM alpine:latest
 
-#Define the version of the app, this should better be done with an .env file.
-ENV APP_VERSION=0.0.1-SNAPSHOT
+WORKDIR /
 
-#honestly, i dont know where a good place is to get the final app. altough it seems logical to put it in /var/www
-COPY --from=BUILD $APP_HOME/app/build/libs/app-0.0.1-SNAPSHOT.jar $APP_HOME/app/build/libs/app-0.0.1-SNAPSHOT.jar 
+COPY --from=build /app-backend /app-backend
 
-#RUN addgroup -S spring && adduser -S spring -G spring
-#USER spring:spring
-
-ENTRYPOINT ["java", "-jar", "/usr/local/dev/OpenLife/app/build/libs/app-0.0.1-SNAPSHOT.jar"]
-
+# Run the app binary when we run the container
+ENTRYPOINT ["/app-backend"]
